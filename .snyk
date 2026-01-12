@@ -1,0 +1,25 @@
+# Snyk configuration file
+# https://docs.snyk.io/features/snyk-cli/configure-the-snyk-cli
+
+# Language settings
+language-settings:
+  python:
+    application: true
+    test: true
+  javascript:
+    package-manager: npm
+
+# Severity threshold
+severity-threshold: medium
+
+# Ignore patterns
+exclude:
+  group:
+    - coverage/**
+    - tests/**
+    - node_modules/**
+    - venv/**
+
+# Monitor all dependencies
+# monitor: true
+

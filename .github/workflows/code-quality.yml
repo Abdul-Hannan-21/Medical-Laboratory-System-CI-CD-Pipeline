@@ -1,0 +1,58 @@
+name: Code Quality Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+        if: ${{ hashFiles('package.json') != '' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+        if: ${{ hashFiles('requirements.txt') != '' }}
+
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            npm ci
+          fi
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+            pip install pylint black isort mypy
+          fi
+
+      - name: Run SonarCloud Scan (if configured)
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        continue-on-error: true
+
+      - name: Check code complexity
+        run: |
+          if [ -f package.json ]; then
+            npm run complexity-check || echo "Complexity check not configured"
+          fi
+        continue-on-error: true
+
+      - name: Generate code coverage badge
+        uses: tj-actions/coverage-badge@v3
+        continue-on-error: true
+

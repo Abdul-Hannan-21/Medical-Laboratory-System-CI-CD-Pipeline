@@ -1,0 +1,7 @@
+# Trivy ignore file for known vulnerabilities that are acceptable
+# Format: CVE-ID or vulnerability ID
+# Example: CVE-2021-12345
+
+# Add specific CVE IDs that you've reviewed and accept the risk
+# For medical systems, be very careful about what you ignore
+
