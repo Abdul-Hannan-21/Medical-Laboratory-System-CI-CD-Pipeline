@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 const healthRoutes = require('./src/routes/health');
 const bookingRoutes = require('./src/routes/bookings');
 const testRoutes = require('./src/routes/tests');
+const ciStatusRoutes = require('./src/routes/ci-status');
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -34,6 +35,10 @@ app.use('/api/', limiter);
 app.use('/health', healthRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/tests', testRoutes);
+app.use('/api/ci-status', ciStatusRoutes);
+
+// Serve static UI assets (dashboard) from public/
+app.use(express.static('public'));
 
 // Root endpoint
 app.get('/', (req, res) => {

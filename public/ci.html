@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CI/CD Pipeline Status</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 24px; background:#0b1020; color:#e6eef8 }
+    .card { background: #0f1724; padding: 16px; border-radius:8px; margin-bottom:12px; box-shadow: 0 2px 6px rgba(0,0,0,0.4) }
+    .ok { color:#28a745 }
+    .fail { color:#d73a49 }
+    .pending { color:#dbab09 }
+    .jobs { display:flex; flex-wrap:wrap; gap:8px }
+    .job { min-width:220px; flex:1; padding:12px; border-radius:6px; background:#071022 }
+    a { color:#9ad1ff }
+  </style>
+</head>
+<body>
+  <h1>CI/CD Pipeline Status</h1>
+  <div id="summary" class="card">Loading...</div>
+  <div id="jobs" class="jobs"></div>
+
+<script>
+async function fetchStatus() {
+  const res = await fetch('/api/ci-status');
+  if (!res.ok) {
+    document.getElementById('summary').innerText = 'Error fetching CI status: ' + (await res.text());
+    return;
+  }
+  const data = await res.json();
+  const summary = document.getElementById('summary');
+  if (data.error) {
+    summary.innerText = 'Error: ' + data.error;
+    return;
+  }
+  if (!data.run) {
+    summary.innerHTML = '<strong>No runs</strong>'; return;
+  }
+  const run = data.run;
+  summary.innerHTML = `<div><strong>Workflow run</strong>: <a href="${run.html_url}" target="_blank">#${run.id}</a> branch ${run.head_branch} — status: ${run.status} ${run.conclusion ? '('+run.conclusion+')':''}</div>`;
+
+  const jobsDiv = document.getElementById('jobs'); jobsDiv.innerHTML = '';
+  const jobs = data.jobs || [];
+  if (!jobs.length) {
+    jobsDiv.innerHTML = '<div class="card">No jobs found</div>';
+    return;
+  }
+  for (const j of jobs) {
+    const el = document.createElement('div'); el.className='job';
+    const state = j.conclusion || j.status || 'unknown';
+    let cls = 'pending'; if (state==='success') cls='ok'; else if (state==='failure' || state==='cancelled' || state==='timed_out') cls='fail';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>${j.name}</strong></div><div class='${cls}'>${state}</div></div><div style="font-size:12px;margin-top:8px">started: ${j.started_at || '-'}<br/>finished: ${j.completed_at || '-'}</div>`;
+    jobsDiv.appendChild(el);
+  }
+}
+
+fetchStatus();
+setInterval(fetchStatus, 30*1000);
+</script>
+</body>
+</html>
