@@ -183,6 +183,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:15
@@ -257,12 +258,36 @@ jobs:
           MYSQL_URL: mysql://root:test_password@mysql:3306/test_db
           REDIS_URL: redis://redis:6379
         run: |
-          # Wait a short period for service containers to become healthy using /dev/tcp
+          set -euxo pipefail
           echo "Waiting for database services to be ready..."
-          for i in {1..30}; do
-            (echo > /dev/tcp/postgres/5432) >/dev/null 2>&1 && (echo > /dev/tcp/mysql/3306) >/dev/null 2>&1 && (echo > /dev/tcp/redis/6379) >/dev/null 2>&1 && break || sleep 1
+
+          # Try for up to 120s (120 attempts) and print status each try to make logs informative
+          READY=0
+          for i in $(seq 1 120); do
+            echo "Attempt $i: checking tcp connectivity to services..."
+            if (echo > /dev/tcp/postgres/5432) >/dev/null 2>&1 && \
+               (echo > /dev/tcp/mysql/3306) >/dev/null 2>&1 && \
+               (echo > /dev/tcp/redis/6379) >/dev/null 2>&1; then
+              READY=1
+              echo "All services are reachable (after $i seconds)."
+              break
+            fi
+            sleep 1
           done
 
+          if [ "$READY" -ne 1 ]; then
+            echo "Services did not become reachable within timeout. Printing diagnostics..."
+            echo "/etc/hosts entries for services:"
+            getent hosts postgres || true
+            getent hosts mysql || true
+            getent hosts redis || true
+            echo "Listing listening TCP sockets (ss):"
+            ss -ltnp || true
+            # Fail the step so logs are captured and job ends instead of hanging
+            exit 1
+          fi
+
+          # Run integration tests (allow failures to not block downstream jobs if desired)
           if [ -f package.json ]; then
             npm run test:integration || true
           fi
@@ -278,7 +303,7 @@ jobs:
     needs: [lint, unit-tests, security-scan]
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
+      image-digest: ${{ steps.build.outputs.digest || steps.build-no-cache.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -306,16 +331,28 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (with cache)
         id: build
+        if: ${{ github.event_name != 'pull_request' }}
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push Docker image (no cache)
+        id: build-no-cache
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
   # Deploy to Staging
