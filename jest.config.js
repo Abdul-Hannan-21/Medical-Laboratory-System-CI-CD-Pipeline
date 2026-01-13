@@ -19,7 +19,10 @@ module.exports = {
     '**/tests/unit/**/*.test.js'
   ],
   verbose: true,
-  forceExit: true,
+  // Avoid forcing exit; use detectOpenHandles to surface async handles instead
+  forceExit: false,
+  detectOpenHandles: true,
+  testTimeout: 10000,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,

@@ -49,6 +49,19 @@ app.get('/', (req, res) => {
   });
 });
 
+// Redirect to CI dashboard served by the Python preview server.
+// Behavior:
+// - inside compose (when PREVIEW_INTERNAL=true) the preview service hostname is `preview:8000` so
+//   we redirect internally to that host so the app container can proxy/redirect traffic to it.
+// - when running on the host, redirect to localhost:8000 so the browser opens the preview page.
+app.get('/dashboard', (req, res) => {
+  const useInternal = process.env.PREVIEW_INTERNAL === 'true';
+  const internalUrl = 'http://preview:8000';
+  const hostUrl = 'http://localhost:8000';
+  const target = useInternal ? internalUrl : hostUrl;
+  return res.redirect(target);
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({

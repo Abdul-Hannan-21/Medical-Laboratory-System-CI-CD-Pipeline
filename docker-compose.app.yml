@@ -14,6 +14,7 @@ services:
       MYSQL_URL: "mysql://root:test_password@mysql:3306/test_db"
       REDIS_URL: "redis://redis:6379"
       NODE_ENV: development
+      PREVIEW_INTERNAL: 'true'
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,6 +22,18 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  preview:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./:/app:rw
+    command: ["sh", "-c", "pip install --no-cache-dir -r requirements-python.txt >/dev/null 2>&1 || true && python scripts/python_server.py"]
+    ports:
+      - "8000:8000"
+    environment:
+      PY_SERVER_PORT: 8000
     restart: unless-stopped
 
 # Note: this file is intended to be used together with docker-compose.codespaces.yml
