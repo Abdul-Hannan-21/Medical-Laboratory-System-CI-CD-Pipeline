@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: medical-lab:local
+    ports:
+      - "3000:3000"
+    environment:
+      # Use service hostnames so the app connects to the DB/Redis containers in the same compose project
+      DATABASE_URL: "postgresql://test_user:test_password@postgres:5432/test_db"
+      MYSQL_URL: "mysql://root:test_password@mysql:3306/test_db"
+      REDIS_URL: "redis://redis:6379"
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+# Note: this file is intended to be used together with docker-compose.codespaces.yml
+# Start everything with:
+# docker compose -f docker-compose.codespaces.yml -f docker-compose.app.yml up --build -d
+# Then open http://localhost:3000
