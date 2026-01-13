@@ -27,6 +27,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    platform: linux/amd64
 
   redis:
     image: redis:7-alpine
