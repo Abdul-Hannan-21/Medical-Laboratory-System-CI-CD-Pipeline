@@ -33,9 +33,9 @@ for i in {1..30}; do
   nc -z localhost 5432 >/dev/null 2>&1 || { sleep 1; continue; }
   nc -z localhost 3306 >/dev/null 2>&1 || { sleep 1; continue; }
   nc -z localhost 6379 >/dev/null 2>&1 || { sleep 1; continue; }
-  echo "All services appear to be accepting connections." 
+  echo "All services appear to be accepting connections."
   exit 0
 done
 
-echo "Timed out waiting for services to become ready." 
+echo "Timed out waiting for services to become ready."
 exit 1
