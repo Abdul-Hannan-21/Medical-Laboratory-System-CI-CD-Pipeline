@@ -1,0 +1,17 @@
+{
+  "name": "Medical Laboratory Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eg2.vscode-npm-script-runner"
+      ]
+    }
+  },
+  "forwardPorts": [3000],
+  "postCreateCommand": "npm ci",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode"
+}
