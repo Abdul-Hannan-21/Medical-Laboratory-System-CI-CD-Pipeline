@@ -293,13 +293,3 @@ Example for Terraform:
 
 [Your License Here]
 
-## 🆘 Support
-
-For issues or questions:
-- Create an issue in the repository
-- Contact the DevOps team
-- Review the documentation
-
----
-
-**⚠️ Important**: This is a medical system handling sensitive patient data. All deployments must be reviewed and approved by authorized personnel. Never bypass security checks or deploy without proper authorization.
